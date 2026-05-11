@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DOLCE</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast"></div>
+
+  <!-- Landing -->
+  <template id="tpl-landing">
+    <div class="shell landing">
+      <div class="logo">
+        <h1>DOLCE</h1>
+        <p class="tag">social deduction · in the room</p>
+      </div>
+      <div class="card">
+        <button class="btn primary" data-action="host">Host on this screen</button>
+        <div class="divider"><span>or join</span></div>
+        <input id="code-in" placeholder="ROOM CODE" maxlength="4" autocapitalize="characters" />
+        <input id="name-in" placeholder="your name" maxlength="16" />
+        <button class="btn" data-action="join">Join here</button>
+      </div>
+      <p class="hint">2–20 players. One host screen. Everyone else on a phone.</p>
+    </div>
+  </template>
+
+  <!-- Host lobby -->
+  <template id="tpl-host-lobby">
+    <div class="shell host-lobby">
+      <div class="head">
+        <h2>DOLCE</h2>
+        <div class="code-badge">ROOM <span class="code" id="code"></span></div>
+      </div>
+      <div class="lobby-grid">
+        <div class="lobby-panel">
+          <h3>crew</h3>
+          <ul id="player-list" class="player-list crew"></ul>
+          <p class="hint">Players join at <strong id="join-url"></strong></p>
+        </div>
+        <div class="lobby-panel">
+          <h3>rules</h3>
+          <ul class="rules">
+            <li>One or more players are secretly <strong>The Distraction</strong> (scales with group size).</li>
+            <li>13 rooms branch off a central <strong>CAFETERIA</strong> — including SAUNA, OBSERVATORY, and the SNOWY STREET.</li>
+            <li>Seekers complete tasks to fill <strong>Calm</strong> before the timer runs out. The Distraction interrupts, stuns, vents.</li>
+            <li>Up to three Seekers play as <strong>The Authoritarian</strong>, <strong>The Board</strong>, or <strong>The Observer</strong> — each with a power and a weakness.</li>
+            <li>Every 90 seconds, everything freezes. Answer the question.</li>
+            <li>Call meetings. Vote carefully.</li>
+          </ul>
+          <button class="btn primary big" id="start">Begin</button>
+          <p id="start-hint" class="hint"></p>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Player lobby -->
+  <template id="tpl-player-lobby">
+    <div class="shell player-lobby">
+      <div class="head">
+        <h2>DOLCE</h2>
+        <div class="code-badge">ROOM <span class="code" id="code"></span></div>
+      </div>
+      <div class="card customize-card">
+        <p class="you-are">you are <strong id="me-name"></strong></p>
+        <div class="me-preview" id="me-preview"></div>
+        <div class="customize-tabs" id="customize-tabs">
+          <button class="cust-tab active" data-tab="color">color</button>
+          <button class="cust-tab" data-tab="hat">hat</button>
+          <button class="cust-tab" data-tab="face">face</button>
+          <button class="cust-tab" data-tab="visor">visor</button>
+          <button class="cust-tab" data-tab="accessory">extra</button>
+          <button class="cust-tab" data-tab="pet">pet</button>
+        </div>
+        <div class="cust-panel" data-panel="color"><div class="color-grid" id="color-grid"></div></div>
+        <div class="cust-panel" data-panel="hat" hidden><div class="hf-grid" id="hat-grid"></div></div>
+        <div class="cust-panel" data-panel="face" hidden><div class="hf-grid" id="face-grid"></div></div>
+        <div class="cust-panel" data-panel="visor" hidden><div class="hf-grid" id="visor-grid"></div></div>
+        <div class="cust-panel" data-panel="accessory" hidden><div class="hf-grid" id="accessory-grid"></div></div>
+        <div class="cust-panel" data-panel="pet" hidden><div class="hf-grid" id="pet-grid"></div></div>
+        <p class="wait">waiting for host to begin...</p>
+      </div>
+      <ul id="player-list" class="player-list crew small"></ul>
+    </div>
+  </template>
+
+  <!-- Role reveal -->
+  <template id="tpl-role-reveal">
+    <div class="overlay role-reveal">
+      <div class="card role-card">
+        <h2 id="role-title"></h2>
+        <p id="role-desc"></p>
+        <button class="btn primary" data-close>understood</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Host game -->
+  <template id="tpl-host-game">
+    <div class="shell host-game">
+      <div class="top-bar">
+        <div class="meters single">
+          <div class="meter calm">
+            <div class="meter-label">CALM</div>
+            <div class="meter-bar"><div class="fill" id="calm-fill"></div></div>
+          </div>
+        </div>
+        <div class="timer-block">
+          <div class="timer-label">TIME LEFT</div>
+          <div class="timer-clock" id="timer-label">—:—</div>
+        </div>
+        <div class="round-info">
+          <span id="meetings-label">meetings: 2</span>
+          <span id="tasks-label">tasks: 0/0</span>
+          <span id="drift-label" hidden>DRIFT</span>
+        </div>
+        <button class="btn small icon-btn" id="fs-btn" title="Toggle fullscreen">⛶</button>
+      </div>
+      <div class="map-wrap">
+        <canvas id="map" width="1700" height="980"></canvas>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+  </template>
+
+  <!-- Player game -->
+  <template id="tpl-player-game">
+    <div class="shell player-game">
+      <div class="top-bar compact">
+        <div class="role-chip" id="role-chip"></div>
+        <div class="loc-label" id="loc-label"></div>
+        <button class="btn small icon-btn" id="fs-btn" title="Toggle fullscreen">⛶</button>
+      </div>
+      <div class="hud-row" id="hud-row">
+        <span id="hud-tasks"></span>
+      </div>
+      <div class="task-list" id="task-list" hidden></div>
+      <div class="map-wrap mobile">
+        <canvas id="map" width="800" height="600"></canvas>
+      </div>
+      <div class="sabotage-bar" id="sabotage-bar"></div>
+      <button class="meeting-call-btn" id="meeting-btn">
+        <span class="mc-icon">!</span>
+        <span class="mc-label">CALL MEETING</span>
+        <span class="mc-sub" id="meeting-sub">2 LEFT</span>
+      </button>
+      <div class="dpad">
+        <button class="pad up" data-dir="up">▲</button>
+        <button class="pad left" data-dir="left">◀</button>
+        <button class="pad act" id="act-btn">ACT</button>
+        <button class="pad right" data-dir="right">▶</button>
+        <button class="pad down" data-dir="down">▼</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Task overlay -->
+  <template id="tpl-task">
+    <div class="overlay task">
+      <div class="card task-card">
+        <button class="close-x" data-close>×</button>
+        <div id="task-body"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Vent overlay -->
+  <template id="tpl-vent">
+    <div class="overlay vent">
+      <div class="card vent-card">
+        <button class="close-x" data-close>×</button>
+        <h3>VENT</h3>
+        <p class="hint">pick a destination.</p>
+        <div class="vent-list" id="vent-list"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Meeting (calmer "PAUSE" treatment) -->
+  <template id="tpl-meeting">
+    <div class="shell meeting au">
+      <div class="meeting-banner pause">
+        <h1 class="emergency-title">PAUSE</h1>
+        <div class="caller-line">called by <span id="caller-name"></span></div>
+      </div>
+      <div class="meeting-body au">
+        <div class="meeting-grid" id="meeting-grid"></div>
+        <div class="meeting-side">
+          <div class="situation-mini" id="situation-mini"></div>
+          <div class="meeting-timer" id="meeting-timer"></div>
+          <div class="chat" id="chat"></div>
+          <form id="chat-form">
+            <input id="chat-in" placeholder="say something" maxlength="140" autocomplete="off" />
+            <button class="btn">send</button>
+          </form>
+          <div id="vote-section"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Still Moment question (player) -->
+  <template id="tpl-still-question">
+    <div class="still-overlay question">
+      <div class="still-inner">
+        <div class="still-question" id="still-q"></div>
+        <input id="still-in" placeholder="one word" maxlength="24" autocomplete="off" autocorrect="off" autocapitalize="off" />
+        <button class="btn primary" id="still-submit">submit</button>
+        <div class="still-timer" id="still-timer"></div>
+        <div class="still-sub" id="still-sub"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Still Moment reveal -->
+  <template id="tpl-still-reveal">
+    <div class="still-overlay reveal">
+      <div class="still-inner wide">
+        <div class="still-label">answers</div>
+        <div class="still-answers" id="still-answers"></div>
+        <div class="still-sub">resuming...</div>
+      </div>
+    </div>
+  </template>
+
+  <!-- End screen -->
+  <template id="tpl-end">
+    <div class="shell end">
+      <div class="card end-card">
+        <h1 id="end-winner"></h1>
+        <p id="end-reason"></p>
+        <div class="reveal-list" id="reveal-list"></div>
+
+        <h3 class="section-title">still moment answers</h3>
+        <p class="section-sub">the mismatched answer is <span class="amber-text">this is what didn't fit</span>.</p>
+        <div class="still-history" id="still-history"></div>
+
+        <button class="btn primary" id="play-again">play again</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
